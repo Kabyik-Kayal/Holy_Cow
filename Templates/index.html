@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holy Cow Image Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-section, .generate-section, .result-section {
+            margin: 30px 0;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .upload-section {
+            border-left: 4px solid #4CAF50;
+        }
+        .generate-section {
+            border-left: 4px solid #2196F3;
+        }
+        .result-section {
+            border-left: 4px solid #FF9800;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            background-color: white;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .generate-btn {
+            background-color: #2196F3;
+        }
+        .generate-btn:hover {
+            background-color: #1976D2;
+        }
+        .image-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .image-display img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .flash-messages {
+            margin: 20px 0;
+        }
+        .flash {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .flash.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .hidden {
+            display: none;
+        }
+        .step {
+            margin: 20px 0;
+        }
+        .step-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐄 Holy Cow Image Generator</h1>
+        
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flash {% if 'Error' in message or 'Please' in message %}error{% else %}success{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="step upload-section">
+            <div class="step-title">Step 1: Upload Your Image</div>
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*" required>
+                <button type="submit">Upload Image</button>
+            </form>
+            
+            {% if uploaded %}
+                <div class="image-display">
+                    <h3>Uploaded Image:</h3>
+                    <img src="/artifacts/uploaded_image.png" alt="Uploaded Image">
+                </div>
+            {% endif %}
+        </div>
+
+        {% if uploaded %}
+        <div class="step generate-section">
+            <div class="step-title">Step 2: Generate Holy Cow Image</div>
+            <form action="/generate" method="post">
+                <button type="submit" class="generate-btn">🎨 Generate Holy Cow Image</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if generated %}
+        <div class="step result-section">
+            <div class="step-title">Step 3: Your Generated Image</div>
+            <div class="image-display">
+                <h3>Generated Holy Cow Image:</h3>
+                <img src="/artifacts/generated_image.png" alt="Generated Image">
+                <br><br>
+                <a href="/artifacts/generated_image.png" download="holy_cow_generated.png">
+                    <button>Download Image</button>
+                </a>
+                <button onclick="location.reload()">Generate Another</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
