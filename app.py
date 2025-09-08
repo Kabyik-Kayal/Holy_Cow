@@ -3,6 +3,9 @@ import os
 from werkzeug.utils import secure_filename
 from config.paths import artifacts_path, uploaded_image_path
 from src.generator import generate_image
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = str(artifacts_path)
@@ -25,9 +28,12 @@ def cleanup_temp_images():
 
 @app.route('/')
 def index():
-    # Clean up any existing uploaded and generated images when accessing the index page
-    # This ensures a fresh start every time someone visits the main page
-    cleanup_temp_images()
+    # Don't automatically clean up images - let the frontend handle cleanup timing
+    # Only cleanup if explicitly requested via query parameter
+    if request.args.get('cleanup') == 'true':
+        cleanup_temp_images()
+        logger.info("Cleaned up temp images on explicit request")
+    
     return render_template('index.html', uploaded=False, generated=False)
 
 @app.route('/upload', methods=['POST'])
@@ -63,8 +69,11 @@ def generate():
         # Get the optional API key from the form
         user_api_key = request.form.get('api_key', '').strip()
         
-        # Pass the API key to the generate_image function
-        generate_image(user_api_key if user_api_key else None)
+        # Pass the API key to the generate_image function and get the path
+        generated_image_path = generate_image(user_api_key if user_api_key else None)
+        
+        # Log successful generation
+        logger.info(f"Image generated successfully at: {generated_image_path}")
         
         # Success response
         success_msg = 'Image generated successfully!'
@@ -76,49 +85,54 @@ def generate():
         
     except Exception as e:
         error_message = str(e)
-        
-        # Check if this is an API-related error
-        api_error_keywords = [
-            'api', 'quota', 'rate limit', 'unauthorized', 'forbidden', 
-            'authentication', 'permission', 'invalid key', 'exceed',
-            'service unavailable', 'bad request', 'timeout'
-        ]
-        
-        is_api_error = any(keyword in error_message.lower() for keyword in api_error_keywords)
+        logger.error(f"Error in generate route: {error_message}")
         
         # Check if the request expects JSON response (for AJAX requests)
         if request.headers.get('Content-Type') == 'application/json' or 'application/json' in request.headers.get('Accept', ''):
             return jsonify({
                 'success': False,
-                'error': error_message,
-                'is_api_error': is_api_error
+                'error': 'Oops! Try again later or use your own API key'
             }), 400
         
-        # For regular form submission, flash the error and add popup flag
-        flash(f'Error generating image: {error_message}')
-        return render_template('index.html', uploaded=True, show_api_error_popup=is_api_error)
+        # For regular form submission, flash the error
+        flash('Oops! Try again later or use your own API key')
+        return render_template('index.html', uploaded=True)
 
 @app.route('/artifacts/<filename>')
 def artifacts(filename):
-    return send_from_directory(artifacts_path, filename)
+    return send_from_directory(str(artifacts_path), filename)
 
 @app.route('/download/<filename>')
 def download_and_cleanup(filename):
-    """Serve file for download and clean up temporary images"""
+    """Serve file for download without cleanup"""
     try:
-        # Serve the file
-        response = send_from_directory(artifacts_path, filename, as_attachment=True)
+        # Check if file exists
+        file_path = artifacts_path / filename
+        logger.info(f"Attempting to download file: {file_path}")
+        logger.info(f"File exists: {os.path.exists(file_path)}")
         
-        # Clean up temp images after download
-        # We'll do this in a separate route to avoid interfering with the download
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            flash('File not found')
+            return redirect(url_for('index'))
+        
+        logger.info(f"Serving file for download: {file_path}")
+        # Serve the file for download - convert Path to string for Flask
+        response = send_from_directory(str(artifacts_path), filename, as_attachment=True)
+        
+        # Set headers to ensure proper download behavior
+        response.headers['Content-Disposition'] = f'attachment; filename=holy_cow_generated.png'
+        response.headers['Content-Type'] = 'image/png'
+        
         return response
     except Exception as e:
+        logger.error(f"Error downloading file: {str(e)}")
         flash(f'Error downloading file: {str(e)}')
         return redirect(url_for('index'))
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup_images():
-    """Clean up temporary images - called via AJAX after download"""
+    """Clean up temporary images - called when page is reloaded or navigated away"""
     cleanup_temp_images()
     return jsonify({'success': True})
 

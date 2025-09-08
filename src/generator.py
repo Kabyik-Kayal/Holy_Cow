@@ -79,11 +79,11 @@ def generate_image(user_api_key=None):
         logger.error(f"Error in generate_image: {str(e)}")
         
         # Check for specific API errors and provide more user-friendly messages
-        if any(keyword in error_str for keyword in ['quota', 'rate limit', 'exceeded']):
+        if any(keyword in error_str for keyword in ['429', 'quota', 'rate limit', 'exceeded', 'resource_exhausted', 'resource has been exhausted']):
             raise CustomException("API quota exceeded. Please try again later or use your own API key.", sys)
-        elif any(keyword in error_str for keyword in ['unauthorized', 'authentication', 'invalid key', 'forbidden']):
+        elif any(keyword in error_str for keyword in ['unauthorized', 'authentication', 'invalid key', 'forbidden', '401', '403']):
             raise CustomException("API authentication failed. Please check your API key or try again later.", sys)
-        elif any(keyword in error_str for keyword in ['service unavailable', 'timeout', 'connection']):
+        elif any(keyword in error_str for keyword in ['service unavailable', 'timeout', 'connection', '503', '504']):
             raise CustomException("API service temporarily unavailable. Please try again later.", sys)
         elif 'permission' in error_str:
             raise CustomException("API permission denied. Please use your own API key.", sys)
