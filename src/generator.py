@@ -17,15 +17,27 @@ FALLBACK_GEMINI_API_KEY = os.getenv("FALLBACK_GEMINI_API_KEY")
 
 logger = get_logger(__name__)
 
-client = genai.Client(api_key=GEMINI_API_KEY or FALLBACK_GEMINI_API_KEY)
+# Create a default client with your API key
+default_client = genai.Client(api_key=GEMINI_API_KEY or FALLBACK_GEMINI_API_KEY)
 
-def generate_image():
+def generate_image(user_api_key=None):
     """
     Uses Gemini model to generate an image of a human in the style of the Holy Cow image.
+    
+    Args:
+        user_api_key (str, optional): User's own API key. If provided, it will be used instead of the default API key.
     """
     try:
+        # Use user's API key if provided, otherwise use the default client
+        if user_api_key:
+            client = genai.Client(api_key=user_api_key)
+            logger.info("Using user-provided API key")
+        else:
+            client = default_client
+            logger.info("Using default API key")
+            
         prompt = (
-            "Using the first image of the cow generate a new image where Instead of the cow's head, use my zoomed head "
+            "Using the first image of the cow generate a new image where Instead of the cow's head, use the zoomed head "
             "of the person from the second picture, adjust the person's head pose and face just like the cow from the first image, also include the glasses, keep the red background style, "
             "dont inlcude the person's photo below the neck so only the head and neck is seen in the image where the person is posing with the head upwards and the pov of the photo captures the person from a sideview exactly like the cow, "
             "then change the colour and style of the person's face like the cow's, the final output image should be in 1:1 ratio"
@@ -63,5 +75,17 @@ def generate_image():
 
         raise CustomException("No image data received from the model", sys)
     except Exception as e:
+        error_str = str(e).lower()
         logger.error(f"Error in generate_image: {str(e)}")
-        raise CustomException(f"Failed to generate image: {str(e)}", sys)
+        
+        # Check for specific API errors and provide more user-friendly messages
+        if any(keyword in error_str for keyword in ['quota', 'rate limit', 'exceeded']):
+            raise CustomException("API quota exceeded. Please try again later or use your own API key.", sys)
+        elif any(keyword in error_str for keyword in ['unauthorized', 'authentication', 'invalid key', 'forbidden']):
+            raise CustomException("API authentication failed. Please check your API key or try again later.", sys)
+        elif any(keyword in error_str for keyword in ['service unavailable', 'timeout', 'connection']):
+            raise CustomException("API service temporarily unavailable. Please try again later.", sys)
+        elif 'permission' in error_str:
+            raise CustomException("API permission denied. Please use your own API key.", sys)
+        else:
+            raise CustomException(f"Failed to generate image: {str(e)}", sys)
