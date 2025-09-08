@@ -2,16 +2,16 @@
 
 ## Overview
 
-Upload your photo and watch as AI replaces the cow's head with your face while maintaining the artistic style. Built with Flask and powered by Google Gemini 2.5 Flash Image Preview model.
+When OpenAI's GPT-Image-1 released it came with the Ghibli trend. So why Nano-Banana gets no trend like that? For that sole purpose, here is a fun project to "Holy Cow" your image.
 
-Visit the [Website](www.google.com)
+Visit the [Website](https://holy-cow-t11a.onrender.com)
 
 ## Features
 
-- 🖼️ **Image Upload**: Support for PNG, JPG, JPEG, GIF, BMP
-- 🤖 **AI Generation**: Google Gemini AI for style transfer and face replacement
-- 📱 **Responsive Design**: Mobile-friendly web interface
-- 💾 **Download Support**: Save generated images directly
+- **Image Upload**: Support for PNG, JPG, JPEG, GIF, BMP
+- **AI Generation**: Google Gemini Nano Banana for style transfer and face replacement in few seconds
+- **Responsive Design**: Mobile-friendly web interface
+- **Download Support**: Save generated images directly
 
 ## Quick Start for Developers
 
@@ -39,7 +39,7 @@ FALLBACK_GEMINI_API_KEY=your_backup_gemini_api_key_here
 python app.py
 ```
 
-Visit `http://localhost:5000`
+Visit `http://localhost:10000`
 
 ## How It Works
 
@@ -64,12 +64,11 @@ Holy_Cow/
 - **Flask 3.1.2** - Web framework
 - **google-genai 1.32.0** - Gemini API client
 - **Pillow 11.3.0** - Image processing
-- **python-dotenv 1.1.1** - Environment variables
+
+## Note
+
+None of the generated or uploaded images to the website are saved by any means. The optional API key is also not saved or logged.
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Author
-
-**Kabyik** - [GitHub](https://github.com/Kabyik-Kayal)
